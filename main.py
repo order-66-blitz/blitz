@@ -1,4 +1,0 @@
-
-# TODO
-
-print("Hello world.")
