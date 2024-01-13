@@ -18,6 +18,8 @@ class DefaultStrategy(Strategy):
         return [
             ShieldTask(),
             ShieldTask(),
+            ShieldTask(),
+            ShieldTask(),
             RadarTask(),
             DebrisProtectionTask(hit_radius=50),
         ]

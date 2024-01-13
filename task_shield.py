@@ -13,5 +13,11 @@ class ShieldTask(Task):
         return TaskActions(station_id, [])
 
     def get_score(self, game: GameMessage) -> float:
-        # TODO
-        return 100
+        ship = game.get_own_ship()
+        shield_percent = ship.currentShield / game.constants.ship.maxShield
+        if shield_percent < 0.10:
+            return 100
+        elif shield_percent < 0.50:
+            return 50
+        else:
+            return 10

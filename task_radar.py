@@ -14,4 +14,4 @@ class RadarTask(Task):
 
     def get_score(self, game: GameMessage) -> float:
         # TODO
-        return 100
+        return 50

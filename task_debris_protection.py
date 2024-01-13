@@ -131,4 +131,4 @@ class DebrisProtectionTask(Task):
 
     def get_score(self, game: GameMessage) -> float:
         # TODO
-        return 50
+        return 200
