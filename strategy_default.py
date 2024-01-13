@@ -1,8 +1,6 @@
-import math
 from typing import Optional
 
-from actions import StationAction
-from game_message import GameMessage, TurretType
+from game_message import GameMessage
 from strategy import Strategy
 from task import Task
 from task_attack import AttackTask
@@ -32,7 +30,7 @@ class DefaultStrategy(Strategy):
                 ShieldTask(),
                 RadarTask(),
                 DebrisProtectionTask(),
-                # AttackTask(),
+                AttackTask(),
             ]
         return self.tasks
 

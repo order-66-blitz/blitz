@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Union
 
 from actions import *
 from game_message import *
@@ -56,7 +57,7 @@ class Bot:
         for crew in ship.crew:
             self.task_assignments[crew.id] = None
 
-    def assign_task(self, game: GameMessage, task: Task, task_index: int) -> Optional[CrewMoveAction]:
+    def assign_task(self, game: GameMessage, task: Task, task_index: int) -> Union[None, str, CrewMoveAction]:
         ship = game.get_own_ship()
         score = task.get_score(game)
         station_id = task.get_station_id(game)
@@ -72,6 +73,8 @@ class Bot:
                 continue
             if crew_dist:
                 allowed_crew[crew.id] = crew_dist
+        if not allowed_crew:
+            return "unassignable"
 
         reason: str
 
@@ -147,10 +150,11 @@ class Bot:
                     continue
 
             move_action = self.assign_task(game, task, task_index)
-            if move_action:
-                actions.append(move_action)
+            if move_action != "unassignable":
+                if move_action:
+                    actions.append(move_action)
 
-            actions += task.get_actions(game)
+                actions += task.get_actions(game)
 
             del tasks[0]
             crew_count -= 1

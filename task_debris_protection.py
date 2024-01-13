@@ -61,7 +61,8 @@ class DebrisProtectionTask(Task):
             # if turret.operator is not None and turret.operator != self.last_operator:
             #     # Turret already in use
             #     continue
-            return turret
+            if turret:
+                return turret
         return None
 
     def is_usable(self, game: GameMessage) -> bool:
