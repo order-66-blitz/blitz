@@ -18,6 +18,9 @@ class GameMessage:
     ships: Dict[str, Ship]
     currentTeamId: str
 
+    def get_own_ship(self) -> Ship:
+        return self.ships.get(self.currentTeamId)
+
 
 @dataclass
 class DebrisExplodesInto:
