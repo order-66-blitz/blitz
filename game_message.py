@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from enum import unique, Enum
 from typing import List, Dict, Optional
@@ -157,6 +158,21 @@ class DistanceFromStations:
 class Vector:
     x: float
     y: float
+
+    def distance(self, other: Vector) -> float:
+        return math.hypot(other.x - self.x, other.y - self.y)
+
+    def __mul__(self, scalar: float) -> Vector:
+        return Vector(scalar * self.x, scalar * self.y)
+
+    def __add__(self, other: Vector) -> Vector:
+        return Vector(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other: Vector) -> Vector:
+        return Vector(self.x - other.x, self.y - other.y)
+
+    def norm(self) -> float:
+        return math.hypot(self.x, self.y)
 
 
 @dataclass

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from actions import StationAction
 from game_message import GameMessage
+
 
 @dataclass
 class TaskActions:
@@ -11,7 +11,10 @@ class TaskActions:
 
 
 class Task:
-    def get_actions(self, game: GameMessage) -> Optional[TaskActions]:
+    def is_usable(self, game: GameMessage) -> bool:
+        return True
+
+    def get_actions(self, game: GameMessage) -> TaskActions:
         """
         Get station actions for a task.
         All actions must be for the same station.
