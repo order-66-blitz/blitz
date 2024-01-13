@@ -30,7 +30,8 @@ class DefaultStrategy(Strategy):
                 ShieldTask(),
                 RadarTask(),
                 DebrisProtectionTask(),
-                AttackTask(),
+                DebrisProtectionTask(),
+                # AttackTask(),
             ]
         return self.tasks
 

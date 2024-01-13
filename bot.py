@@ -120,6 +120,12 @@ class Bot:
 
         tasks = list(enumerate(all_tasks))
 
+        # Assign turret operators even if they haven't arrived yet...
+        for turret in ship.stations.turrets:
+            for crew_id, assignment in self.task_assignments.items():
+                if assignment and not turret.operator and assignment.station_id == turret.id:
+                    turret.operator = crew_id
+
         for assignment in self.task_assignments.values():
             if assignment is not None:
                 assignment.assigned = False

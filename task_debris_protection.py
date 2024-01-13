@@ -58,9 +58,9 @@ class DebrisProtectionTask(Task):
         turrets = game.get_own_ship().stations.turrets
         for ttype in self.TURRET_TYPE_PRIORITY:
             turret = next((t for t in turrets if t.turretType == ttype), None)
-            # if turret.operator is not None and turret.operator != self.last_operator:
-            #     # Turret already in use
-            #     continue
+            if turret.operator is not None and turret.operator != self.last_operator:
+                # Turret already in use
+                continue
             if turret:
                 return turret
         return None
