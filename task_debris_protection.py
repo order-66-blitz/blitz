@@ -2,7 +2,7 @@ import math
 from dataclasses import dataclass
 from typing import Optional
 
-from actions import TurretShootAction, TurretRotateAction, TurretChargeAction
+from actions import TurretShootAction, TurretRotateAction
 from game_message import GameMessage, TurretType, DebrisType, Vector, Debris, TurretStation
 from task import Task, TaskActions
 
@@ -40,8 +40,7 @@ class DebrisProtectionTask(Task):
         DebrisType.Large: 20000.0,
     }
 
-    def __init__(self, hit_radius: float) -> None:
-        self.hit_radius = hit_radius
+    def __init__(self) -> None:
         self.handled_ids = {}
 
     def get_turret(self, game: GameMessage) -> Optional[TurretStation]:
@@ -99,7 +98,7 @@ class DebrisProtectionTask(Task):
                 cannon_pos, debris.position, debris.velocity, rocket_speed)
 
             if (intersection.distance(ship.worldPosition) >=
-                    debris.radius + game.constants.ship.stations.shield.shieldRadius + self.hit_radius):
+                    debris.radius * 1.5 + game.constants.ship.stations.shield.shieldRadius):
                 # Projectile would not hit ship
                 continue
 

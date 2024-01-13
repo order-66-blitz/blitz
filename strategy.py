@@ -4,6 +4,9 @@ from task import Task
 
 
 class Strategy:
+    def reset(self) -> None:
+        raise NotImplementedError
+
     def get_tasks(self, game: GameMessage) -> list[Task]:
         """
         Get station actions for a station.

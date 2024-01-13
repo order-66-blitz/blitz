@@ -26,10 +26,12 @@ class Bot:
                 max_strategy_name = name
                 max_strategy_score = score
 
+        strategy = STRATEGIES[max_strategy_name]
+
         if max_strategy_name != self.last_max_strategy_name:
+            strategy.reset()
             print(f"Using '{max_strategy_name}' strategy")
 
-        strategy = STRATEGIES[max_strategy_name]
         self.last_max_strategy_name = max_strategy_name
 
         tasks = strategy.get_tasks(game)
