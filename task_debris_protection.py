@@ -2,9 +2,9 @@ import math
 from dataclasses import dataclass
 from typing import Optional
 
-from actions import TurretShootAction, TurretRotateAction
+from actions import TurretShootAction, TurretRotateAction, StationAction
 from game_message import GameMessage, TurretType, DebrisType, Vector, Debris, TurretStation
-from task import Task, TaskActions
+from task import Task
 
 
 def newton(f, x0, h=1e-5, tol=1e-6, nmax=20) -> float:
@@ -29,6 +29,7 @@ class DebrisChoice:
 
 class DebrisProtectionTask(Task):
     handled_ids: dict[str, int]
+    last_operator: Optional[str]
 
     HANDLED_ID_TIMEOUT = 20  # ticks
 
@@ -40,18 +41,37 @@ class DebrisProtectionTask(Task):
         DebrisType.Large: 20000.0,
     }
 
+    TURRET_TYPE_PRIORITY = [
+        TurretType.Normal,
+        TurretType.EMP,
+    ]
+
     def __init__(self) -> None:
         self.handled_ids = {}
+        self.last_operator = None
+
+    def reset(self) -> None:
+        self.handled_ids = {}
+        self.last_operator = None
 
     def get_turret(self, game: GameMessage) -> Optional[TurretStation]:
         turrets = game.get_own_ship().stations.turrets
-        normal_turret = next((t for t in turrets if t.turretType == TurretType.Normal), None)
-        if not normal_turret:
-            return next((t for t in turrets if t.turretType == TurretType.EMP), None)
-        return normal_turret
+        for ttype in self.TURRET_TYPE_PRIORITY:
+            turret = next((t for t in turrets if t.turretType == ttype), None)
+            # if turret.operator is not None and turret.operator != self.last_operator:
+            #     # Turret already in use
+            #     continue
+            return turret
+        return None
 
     def is_usable(self, game: GameMessage) -> bool:
         return self.get_turret(game) is not None
+
+    def is_station_exclusive(self) -> bool:
+        return True
+
+    def get_station_id(self, game: GameMessage) -> str:
+        return self.get_turret(game).id
 
     @staticmethod
     def find_projectile_debris_intersection(cannon_pos: Vector, meteor_pos: Vector, meteor_speed: Vector,
@@ -70,13 +90,26 @@ class DebrisProtectionTask(Task):
         intersection = cannon_pos + Vector(math.cos(angle), math.sin(angle)) * v1 * t
         return math.degrees(angle), t, intersection
 
-    def get_actions(self, game: GameMessage) -> TaskActions:
+    @staticmethod
+    def does_debris_intersect_ship(game: GameMessage, ship_pos: Vector, debris: Debris) -> bool:
+        a = debris.velocity.y / debris.velocity.x
+        b = debris.position.y - debris.position.x * a
+        dist = abs(a * ship_pos.x - ship_pos.y + b) / math.sqrt(a**2 + 1)
+        return dist < debris.radius + game.constants.ship.stations.shield.shieldRadius
+
+    def get_actions(self, game: GameMessage) -> list[StationAction]:
         ship = game.get_own_ship()
         turret = self.get_turret(game)
 
         if turret.charge < 0:
             # Cannot shoot yet
-            return TaskActions(turret.id, [])
+            return []
+
+        if turret.operator is None:
+            # Not arrived yet
+            return []
+
+        self.last_operator = turret.operator
 
         cannon_pos = turret.worldPosition
         rocket_speed = game.constants.ship.stations.turretInfos[turret.turretType].rocketSpeed
@@ -94,22 +127,25 @@ class DebrisProtectionTask(Task):
                 continue
 
             # Find the cannon angle required to hit meteor
-            angle, time_to_hit, intersection = DebrisProtectionTask.find_projectile_debris_intersection(
+            angle, time_to_hit, intersection_bullet = DebrisProtectionTask.find_projectile_debris_intersection(
                 cannon_pos, debris.position, debris.velocity, rocket_speed)
 
-            if (intersection.distance(ship.worldPosition) >=
-                    debris.radius * 1.5 + game.constants.ship.stations.shield.shieldRadius):
+            # Find debris--ship intersection
+            _, _, intersection_ship = DebrisProtectionTask.find_projectile_debris_intersection(
+                ship.worldPosition, debris.position, debris.velocity, 1)
+
+            if not self.does_debris_intersect_ship(game, ship.worldPosition, debris):
                 # Projectile would not hit ship
                 continue
 
             score = 1 / time_to_hit
             score *= DebrisProtectionTask.METEOR_SIZE_MULTIPLIER[debris.debrisType]  # Choose bigger meteors
 
-            choices.append(DebrisChoice(debris, score, angle, intersection, time_to_hit))
+            choices.append(DebrisChoice(debris, score, angle, intersection_bullet, time_to_hit))
 
         if not choices:
             # No meteor could be chosen
-            return TaskActions(turret.id, [])
+            return []
 
         chosen = max(choices, key=lambda c: c.score)
 
@@ -121,12 +157,11 @@ class DebrisProtectionTask(Task):
         if curr_angle > 180:
             curr_angle -= 360
 
-        print(chosen)
-        return TaskActions(turret.id, [
+        return [
             # TurretRotateAction(turret.id, angle=10),
             TurretRotateAction(turret.id, angle=(chosen.angle - curr_angle)),
             TurretShootAction(turret.id),
-        ])
+        ]
 
     def get_score(self, game: GameMessage) -> float:
         # TODO
